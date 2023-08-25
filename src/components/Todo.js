@@ -9,33 +9,32 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import IconButton from "@mui/material/IconButton";
 import ModeEditOutlineOutlinedIcon from "@mui/icons-material/ModeEditOutlineOutlined";
 
-import { useContext, useState } from "react";
-import { TodosContext } from "../contexts/todosContext";
-import { ToastContext } from "../contexts/ToastContext";
+import { useTodos } from "../contexts/todosContext";
+import { ToastContext, useToast } from "../contexts/ToastContext";
 
-export default function Todo({ todo , openDeleteDialog, openUpdateDialog}) {
-  const { todos, setTodos } = useContext(TodosContext);
-  const { showHideSnackBar} = useContext(ToastContext);
+export default function Todo({ todo, openDeleteDialog, openUpdateDialog }) {
+  const { todos, dispatch } = useTodos();
+  const { showHideSnackBar } = useToast(ToastContext);
 
   // EVENT HANDLERS
   function handleCheckClick() {
-    const updatedTodos = todos.map((t) => {
-      if (t.id === todo.id) {
-        !t.isCompleted ? showHideSnackBar("تم انجاز المهمة","success") : showHideSnackBar("تم اضافة المهمة غير منجزة","warning")
-        t.isCompleted = !t.isCompleted;
-      }
-      return t;
+    dispatch({
+      type: "checked",
+      payload: {
+        todo: todo,
+      },
     });
-    setTodos(updatedTodos);
-    localStorage.setItem("todos", JSON.stringify(updatedTodos));
+    !todo.isCompleted
+      ? showHideSnackBar("تم انجاز المهمة", "success")
+      : showHideSnackBar("تم ألغاء أنجاز المهمة", "warning");
   }
 
   function handleUpdateClick() {
     openUpdateDialog(todo);
   }
 
-  function handleDeleteDialogClick(){
-    openDeleteDialog(todo)
+  function handleDeleteDialogClick() {
+    openDeleteDialog(todo);
   }
 
   // ====== EVENT HANDLERS ======
@@ -53,11 +52,23 @@ export default function Todo({ todo , openDeleteDialog, openUpdateDialog}) {
         <CardContent>
           <Grid container spacing={2}>
             <Grid xs={8}>
-              <Typography variant="h5" sx={{ textAlign: "right" ,textDecoration: todo.isCompleted ? "line-through" : "none"}}>
+              <Typography
+                variant="h5"
+                sx={{
+                  textAlign: "right",
+                  textDecoration: todo.isCompleted ? "line-through" : "none",
+                }}
+              >
                 {todo.title}
               </Typography>
 
-              <Typography variant="h6" sx={{ textAlign: "right", textDecoration: todo.isCompleted ? "line-through" : "none"}}>
+              <Typography
+                variant="h6"
+                sx={{
+                  textAlign: "right",
+                  textDecoration: todo.isCompleted ? "line-through" : "none",
+                }}
+              >
                 {todo.details}
               </Typography>
             </Grid>

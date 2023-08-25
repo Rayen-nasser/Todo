@@ -9,7 +9,6 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Grid from "@mui/material/Unstable_Grid2";
 import TextField from "@mui/material/TextField";
-import { v4 as uuidv4 } from "uuid";
 
 // Components
 import Todo from "./Todo";
@@ -22,13 +21,12 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 
 // OTHERS
-import { TodosContext } from "../contexts/todosContext";
-import { useContext, useState, useEffect, useMemo } from "react";
-import { ToastContext } from "../contexts/ToastContext";
+import { useTodos } from "../contexts/todosContext";
+import { useState, useEffect, useMemo } from "react";
+import { ToastContext, useToast } from "../contexts/ToastContext";
 
 export default function TodoList() {
-  const { todos, setTodos } = useContext(TodosContext);
-  const { showHideSnackBar} = useContext(ToastContext);
+  const { showHideSnackBar } = useToast(ToastContext);
   const [displayTypeTodos, setDisplayTypeTodos] = React.useState("all");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -36,6 +34,8 @@ export default function TodoList() {
     title: "",
     details: "",
   });
+
+  const { todos, dispatch } = useTodos();
 
   const completTodos = useMemo(() => {
     return todos.filter((t) => {
@@ -51,9 +51,9 @@ export default function TodoList() {
 
   let todosToBeRender = todos;
 
-  if (displayTypeTodos == "completed") {
+  if (displayTypeTodos === "completed") {
     todosToBeRender = completTodos;
-  } else if (displayTypeTodos == "notCompleted") {
+  } else if (displayTypeTodos === "notCompleted") {
     todosToBeRender = notCompletTodos;
   } else {
     todosToBeRender = todos;
@@ -66,26 +66,22 @@ export default function TodoList() {
   const [titleInput, setTitleInput] = useState("");
 
   useEffect(() => {
-    console.log("calling use effect");
-    const storageTodos = JSON.parse(localStorage.getItem("todos")) ?? [];
-    setTodos(storageTodos);
+    dispatch({
+      type: "get",
+    });
   }, []);
 
   //=====HandelTodo=====//
 
   function handleAddClick() {
-    const newTodo = {
-      id: uuidv4(),
-      title: titleInput,
-      details: "",
-      isCompleted: false,
-    };
-
-    const updatedTodos = [...todos, newTodo];
-    setTodos(updatedTodos);
-    localStorage.setItem("todos", JSON.stringify(updatedTodos));
+    dispatch({
+      type: "added",
+      payload: {
+        todoTitle: titleInput,
+      },
+    });
     setTitleInput("");
-    showHideSnackBar("تم أضافة المهمة جديدة بنجاح","success")
+    showHideSnackBar("تم أضافة المهمة جديدة بنجاح", "success");
   }
 
   function openDeleteDialogClick(todo) {
@@ -98,14 +94,14 @@ export default function TodoList() {
   }
 
   function handleDeleteConfirm() {
-    const updatedTodos = todos.filter((t) => {
-      return t.id !== dialogTodo.id;
+    dispatch({
+      type: "deleted",
+      payload: {
+        dialogTodo: dialogTodo,
+      },
     });
-
-    setTodos(updatedTodos);
-    localStorage.setItem("todos", JSON.stringify(updatedTodos));
     setShowDeleteDialog(false);
-    showHideSnackBar("تم حذف المهمة بنجاح","error")
+    showHideSnackBar("تم حذف المهمة بنجاح", "error");
   }
 
   function openUpdateDialogClick(todo) {
@@ -118,18 +114,14 @@ export default function TodoList() {
   }
 
   function handleUpdateConfirm() {
-    const updatedTodos = todos.map((t) => {
-      if (t.id == dialogTodo.id) {
-        return { ...t, title: dialogTodo.title, details: dialogTodo.details };
-      } else {
-        return t;
-      }
+    dispatch({
+      type: "updated",
+      payload: {
+        dialogTodo: dialogTodo,
+      },
     });
-
-    setTodos(updatedTodos);
     setShowUpdateDialog(false);
-    localStorage.setItem("todos", JSON.stringify(updatedTodos));
-    showHideSnackBar("تم تعديل المهمة بنجاح","info")
+    showHideSnackBar("تم تعديل المهمة بنجاح", "info");
   }
 
   const todosJsx = todosToBeRender.map((t) => {
